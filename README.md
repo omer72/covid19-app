@@ -1,1 +1,1 @@
-# covis19-app
+# covid19-app
