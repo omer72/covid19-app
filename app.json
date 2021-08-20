@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "covid19 - CA by County",
+    "slug": "covid19-california-by-county",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "description": "",
+    "android": {
+      "package": "com.omer72.covid19",
+      "versionCode": 1
+    }
+  }
+}
