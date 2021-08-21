@@ -3,7 +3,7 @@ import { Platform, Text, View, StyleSheet, ActivityIndicator, Picker, Dimensions
 import { LineChart } from 'react-native-chart-kit';
 import Constants from 'expo-constants';
 import * as Location from 'expo-location';
-const key = '960bf03d37f84911b3a0e3f6cd4de94e';
+const key = '94b8f4ed053445bcaeb9a015137d6abd';
 
 function wait(timeout) {
   return new Promise(resolve => {
@@ -42,6 +42,7 @@ export default function App() {
       "4/1/2020",
     ],
   });
+  // console.log(example);
     const chartConfig={
     backgroundColor: "#e26a00",
     backgroundGradientFrom: "#fb8c00",
@@ -68,7 +69,7 @@ export default function App() {
       );
     } else {
       (async () => {
-        let { status } = await Location.requestPermissionsAsync();
+        let { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
           setErrorMsg('Permission to access location was denied');
         }
@@ -80,12 +81,12 @@ export default function App() {
         setLocation(location);
         url = `https://api.opencagedata.com/geocode/v1/json?key=${key}&q=${lat}%2C${long}&pretty=1`;
         // console.log('url ',url);
-    fetch(url)
+        fetch(url)
       .then((response) => response.json())
-      .then((json) => {setCounty(json.results[0].components.county.replace('County','').trim().replace(' ','%20'))})
+      .then((json) => {if (json.results[0].components.county) setCounty(json.results[0].components.county.replace('County','').trim().replace(' ','_'))})
       .catch((error) => console.error(error))
       .finally(() => setLoading(false));
-      
+
       })();
     }
   },[]);
@@ -93,33 +94,41 @@ export default function App() {
     let labels = [];
     let patients = [];
     let deaths = [];
-    value.forEach((value) => {
-      labels.push(value['Most Recent Date'].replace('T00:00:00','').replace('2021-',''));
-      patients.push(value['COVID-19 Positive Patients']);
-      deaths.push(value['Total Count Deaths']);
-    })
+    console.log(value);
+    if (value != undefined){
+        value.forEach((value) => {
+          labels.push(value['Most Recent Date'].replace('T00:00:00','').replace('2021-',''));
+          patients.push(value['COVID-19 Positive Patients']);
+          deaths.push(value['Deaths']);
+        })
+    }
     let newData = data;
     newData.labels = labels;
     newData.datasets = [{data : patients, color: (opacity = 1) => `rgba(134, 65, 244, ${opacity})` },{data : deaths}];
-    newData.legend= ["Positive", "Total Deaths"];
+    newData.legend= ["Positive", "Deaths"];
     setData(newData);
     // console.log(newData);
   }
   useEffect(() => {
     if (county !=''){
-    setLoading(true);
+        setLoading(true);
     // console.log(county);
        //fetch(`https://data.chhs.ca.gov/api/3/action/datastore_search_sql?sql=SELECT%20*%20from%20%226cd8d424-dfaa-4bdd-9410-a3d656e1176e%22%20WHERE%20%22County%20Name%22%20LIKE%20%27${county}%27`)
        fetch(`https://covid19-values-data.herokuapp.com/${county}`)
       .then((response) => response.json())
-      .then((json) => {console.log('got result ',json);setValues(json.records);
-      convertToGraphData(json.records);})
+      .then((json) => {
+        console.log('got result ',json);
+        setValues(json.records);
+        convertToGraphData(json.records)
+      })
+
       .catch((error) => console.error(error))
       .finally(() => setLoading(false));
-  }else{
-    setLoading(false);
-    setCounty('');
+    } else {
+        setLoading(false);
+        setCounty('');
   }},[county]);
+
   let text = 'Waiting..';
   if (errorMsg) {
     text = errorMsg;
@@ -132,7 +141,7 @@ export default function App() {
       <ScrollView
         contentContainerStyle={styles.scrollView}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
-        <View style={styles.container}>         
+        <View style={styles.container}>
       <Picker
         selectedValue={county}
         style={{ height: 50, width: 150 }}
@@ -145,9 +154,9 @@ export default function App() {
         <Picker.Item label="Butte" value="Butte"/>
         <Picker.Item label="Calaveras" value="Calaveras"/>
         <Picker.Item label="Colusa" value="Colusa"/>
-        <Picker.Item label="Contra Costa" value="Contra%20Costa"/>
-        <Picker.Item label="Del Norte" value="Del%20Norte"/>
-        <Picker.Item label="El Dorado" value="El%20Dorado"/>
+        <Picker.Item label="Contra Costa" value="Contra_Costa"/>
+        <Picker.Item label="Del Norte" value="Del_Norte"/>
+        <Picker.Item label="El Dorado" value="El_Dorado"/>
         <Picker.Item label="Fresno" value="Fresno"/>
         <Picker.Item label="Glenn" value="Glenn"/>
         <Picker.Item label="Humboldt" value="Humboldt"/>
@@ -157,7 +166,7 @@ export default function App() {
         <Picker.Item label="Kings" value="Kings"/>
         <Picker.Item label="Lake" value="Lake"/>
         <Picker.Item label="Lassen" value="Lassen"/>
-        <Picker.Item label="Los Angeles" value="Los%20Angeles"/>
+        <Picker.Item label="Los Angeles" value="Los_Angeles"/>
         <Picker.Item label="Madera" value="Madera"/>
         <Picker.Item label="Marin" value="Marin"/>
         <Picker.Item label="Mariposa" value="Mariposa"/>
@@ -173,16 +182,16 @@ export default function App() {
         <Picker.Item label="Plumas" value="Plumas"/>
         <Picker.Item label="Riverside" value="Riverside"/>
         <Picker.Item label="Sacramento" value="Sacramento"/>
-        <Picker.Item label="San Benito" value="San%20Benito"/>
-        <Picker.Item label="San Bernardino" value="San%20Bernardino"/>
-        <Picker.Item label="San Diego" value="San%20Diego"/>
-        <Picker.Item label="San Francisco" value="San%20Francisco"/>
-        <Picker.Item label="San Joaquin" value="San%20Joaquin"/>
-        <Picker.Item label="San Luis Obispo" value="San%20Luis%20Obispo"/>
-        <Picker.Item label="San Mateo" value="San%20Mateo"/>
-        <Picker.Item label="Santa Barbara" value="Santa%20Barbara"/>
-        <Picker.Item label="Santa Clara" value="Santa%20Clara"/>
-        <Picker.Item label="Santa Cruz" value="Santa%20Cruz"/>
+        <Picker.Item label="San Benito" value="San_Benito"/>
+        <Picker.Item label="San Bernardino" value="San_Bernardino"/>
+        <Picker.Item label="San Diego" value="San_Diego"/>
+        <Picker.Item label="San Francisco" value="San_Francisco"/>
+        <Picker.Item label="San Joaquin" value="San_Joaquin"/>
+        <Picker.Item label="San Luis Obispo" value="San_Luis_Obispo"/>
+        <Picker.Item label="San Mateo" value="San_Mateo"/>
+        <Picker.Item label="Santa Barbara" value="Santa_Barbara"/>
+        <Picker.Item label="Santa Clara" value="Santa_Clara"/>
+        <Picker.Item label="Santa Cruz" value="Santa_Cruz"/>
         <Picker.Item label="Shasta" value="Shasta"/>
         <Picker.Item label="Sierra" value="Sierra"/>
         <Picker.Item label="Siskiyou" value="Siskiyou"/>
@@ -199,32 +208,32 @@ export default function App() {
         <Picker.Item label="Yuba" value="Yuba"/>
       </Picker>
       {isLoading ? <ActivityIndicator/> : (
-        
+
         <View>
-          {values.length == 0 ? <Text></Text> :
-          <Text style={styles.paragraph}>
-              <Text>Date: {(values[values.length - 1]['Most Recent Date']).replace('T00:00:00','')}</Text>{"\n"}
-              <Text>Positive Patients: {values[values.length - 1]['COVID-19 Positive Patients']}</Text> {"\n"}
-              <Text>Total Count Confirmed: {values[values.length - 1]['Total Count Confirmed']}</Text> {"\n\n"}
-              <Text>Total Count Deaths: {values[values.length - 1]['Total Count Deaths']}</Text> {"\n"}
-            </Text>  
-          
-        } 
+          {(!values || values.length == 0) ? <Text>No Data available yet for the current location......</Text> :
+              <Text style={styles.paragraph}>
+                  <Text>Date: {(values[values.length - 1]['Most Recent Date']).replace('T00:00:00','')}</Text>{"\n"}
+                  <Text>Positive Patients: {values[values.length - 1]['COVID-19 Positive Patients']}</Text> {"\n"}
+                  <Text>Total Count Confirmed: {values[values.length - 1]['Total Count Confirmed']}</Text> {"\n\n"}
+                  <Text>Deaths: {values[values.length - 1]['Deaths']}</Text> {"\n"}
+                </Text>
+          }
+
         <LineChart
-        data={data}
-        width={screenWidth}
-        height={220}
-        chartConfig={chartConfig}
-        labelColor={(opacity = 1) => `rgba(255, 255, 255, ${opacity})`}
-        bezier
-        fromZero
-        verticalLabelRotation={70}
-        xLabelsOffset={-15}
-        hideLegend={false}
-      />
+            data={data}
+            width={screenWidth}
+            height={220}
+            chartConfig={chartConfig}
+            labelColor={(opacity = 0.9) => `rgba(255, 255, 255, ${opacity})`}
+            bezier
+            fromZero
+            verticalLabelRotation={70}
+            xLabelsOffset={-15}
+            hideLegend={false}
+        />
       </View>
       )}
-       
+
     </View>
     </ScrollView>
     </SafeAreaView>
