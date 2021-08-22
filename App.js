@@ -146,9 +146,8 @@ export default function App() {
 
           {isLoading ? <ActivityIndicator/> : (
             <View>
-                  <Text>{errorMsg}</Text>
               {(!values || values.length === 0) ?
-                  <Text>{text}</Text> :
+                  <Text>{errorMsg}</Text> :
                   <Text style={styles.paragraph}>
                       <Text>Date: {(values[values.length - 1]['Most Recent Date']).replace('T00:00:00','')}</Text>{"\n"}
                       <Text>Positive Patients: {values[values.length - 1]['COVID-19 Positive Patients']}</Text> {"\n"}
@@ -176,5 +175,4 @@ export default function App() {
     </SafeAreaView>
   );
 }
-
 
