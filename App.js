@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Platform, Text, View, StyleSheet, ActivityIndicator, Dimensions, SafeAreaView, ScrollView, RefreshControl } from 'react-native';
+import { Text, View, StyleSheet, ActivityIndicator, Dimensions, SafeAreaView, ScrollView } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { Picker } from '@react-native-picker/picker';
 import Constants from 'expo-constants';
@@ -7,7 +7,6 @@ import * as Location from 'expo-location';
 
 const LocationApiKey = '94b8f4ed053445bcaeb9a015137d6abd';
 const herokuAppUrl = 'https://covid19-values-data.herokuapp.com';
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -28,7 +27,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   }
 });
-
+const noDataAvailable = 'No Data available yet for the current location......';
 const screenWidth = Dimensions.get("window").width;
 const chartConfig={
   backgroundColor: "#e26a00",
@@ -49,11 +48,10 @@ const chartConfig={
 
 export default function App() {
   const [isLoading, setLoading] = useState(true);
-  const [location, setLocation] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
   const [values, setValues] = useState([]);
   const [county, setCounty] = useState('Alameda');
-  const [countyList, setCountyList] = useState([<Picker.Item label="" value=""/>]);
+  const [countyList, setCountyList] = useState([<Picker.Item key= '0' label='' value=''/>]);
   const [data, setData] = useState({
     "datasets": [
        {
@@ -76,11 +74,6 @@ export default function App() {
 
   // get location of device and get current county according to lat/lon
   useEffect(() => {
-    if (Platform.OS === 'android' && !Constants.isDevice) {
-      setErrorMsg(
-        'Oops, this will not work on Sketch in an Android emulator. Try it on your device!'
-      );
-    } else {
       (async () => {
         let { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
@@ -101,28 +94,29 @@ export default function App() {
               .finally(() => setLoading(false));
         }
       })();
-    }
   },[]);
 
-  const convertToGraphData = (value) => {
+  const convertToGraphData = (values) => {
     let labels = [];
     let patients = [];
     let deaths = [];
-    if (value != undefined){
-        value.forEach((value) => {
-          labels.push(value['Most Recent Date'].replace('T00:00:00','').replace('2021-',''));
+    if (values !== undefined){
+        values.forEach((value) => {
+          labels.push(value['Most Recent Date'].replace('2021-',''));
           patients.push(value['COVID-19 Positive Patients']);
           deaths.push(value['Deaths']);
         })
+    } else {
+      setErrorMsg(noDataAvailable);
     }
-    let newData = data;
+    const newData = values;
     newData.labels = labels;
     newData.datasets = [{data : patients, color: (opacity = 1) => `rgba(134, 65, 244, ${opacity})` },{data : deaths}];
     newData.legend= ["Positive", "Deaths"];
     setData(newData);
   }
   useEffect(() => {
-    if (county !=''){
+    if (county !== ''){
         setLoading(true);
        //fetch(`https://data.chhs.ca.gov/api/3/action/datastore_search_sql?sql=SELECT%20*%20from%20%226cd8d424-dfaa-4bdd-9410-a3d656e1176e%22%20WHERE%20%22County%20Name%22%20LIKE%20%27${county}%27`)
        fetch(`${herokuAppUrl}/${county}`)
@@ -145,15 +139,16 @@ export default function App() {
           <Picker
             selectedValue={county}
             style={{ height: 50, width: 150 }}
-            onValueChange={(itemValue, itemIndex) => setCounty(itemValue)}
+            onValueChange={(itemValue) => setCounty(itemValue)}
           >
             {countyList}
           </Picker>
 
           {isLoading ? <ActivityIndicator/> : (
             <View>
-              {(!values || values.length == 0) ?
-                  <Text>No Data available yet for the current location......</Text> :
+                  <Text>{errorMsg}</Text>
+              {(!values || values.length === 0) ?
+                  <Text>{text}</Text> :
                   <Text style={styles.paragraph}>
                       <Text>Date: {(values[values.length - 1]['Most Recent Date']).replace('T00:00:00','')}</Text>{"\n"}
                       <Text>Positive Patients: {values[values.length - 1]['COVID-19 Positive Patients']}</Text> {"\n"}
